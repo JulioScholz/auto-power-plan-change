@@ -7,4 +7,4 @@ Python script able to identify gpu usage, based on current usage the script will
 
 ### Usage
 
-TODO
+python auto-power-plan-change.py -h
