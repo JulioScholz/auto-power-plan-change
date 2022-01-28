@@ -1,10 +1,7 @@
-from ast import arg
-from distutils.log import debug
 import GPUtil
 from winrt.windows.ui.notifications import ToastNotificationManager, ToastNotification, ToastTemplateType
 from threading import Thread
 import time, sys, subprocess, argparse
-from cv2 import threshold
 import numpy as np
 
 
