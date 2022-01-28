@@ -19,7 +19,7 @@ def positive(numeric_type):
     def require_positive(value):
         number = numeric_type(value)
         if number <= 0:
-            raise ArgumentTypeError(f"Number {value} must be positive.")
+            raise argparse.ArgumentTypeError(f"Number {value} must be positive.")
         return number
 
     return require_positive
