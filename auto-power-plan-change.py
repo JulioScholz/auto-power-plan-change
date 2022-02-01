@@ -25,7 +25,7 @@ def positive(numeric_type):
     return require_positive
 
 class Monitor(Thread):
-    def __init__(self, delay, size, threshold):
+    def __init__(self, delay, length, threshold):
         super(Monitor, self).__init__()
 
         #mode 0 = Power saving profile
@@ -37,7 +37,7 @@ class Monitor(Thread):
         self.delay = delay # Time between calls to GPUtil
         self.it = 0 #Iterations counter
         self.arr = np.array([]) #Array that stores the last gpu usage measuraments, used to calculate the gpu usage average
-        self.size = size #The size of the array
+        self.length = length #The size of the array
         self.stopped = False
         #self.start()
 
@@ -48,8 +48,8 @@ class Monitor(Thread):
         while not self.stopped:
             gpu1 = GPUtil.getGPUs()[0]
 
-            if len(self.arr) == self.size:
-                self.arr[(self.it%self.size)-1] = gpu1.load
+            if len(self.arr) == self.length:
+                self.arr[(self.it%self.length)-1] = gpu1.load
             else:
                 self.arr = np.append(self.arr,gpu1.load)
             
@@ -76,37 +76,41 @@ class Monitor(Thread):
             if DEBUG == True:
                 if self.it%30 == 0:
                     print("\033c", end='')
-                    print(subprocess.call(["powercfg", "-getactivescheme"]))   
+                    subprocess.call(["powercfg", "-getactivescheme"])   
             time.sleep(self.delay)
 
 def main():
     global DEBUG
     parser = argparse.ArgumentParser(description='Process some integers.')
+    #parser.add_argument('-s','--setup')
     parser.add_argument('-d','--delay', type=positive(int),metavar='', help='an integer for the delay in seconds between gpu usage verifications')
-    parser.add_argument('-s','--size', type=positive(int),metavar='', help='an integer for the size of the array that stores the gpu usage in the last n interations')
+    parser.add_argument('-l','--length', type=positive(int),metavar='', help='an integer for the length of the array that stores the gpu usage in the last n interations')
     parser.add_argument('-t','--threshold', type=positive(int),metavar='', help='an integer for the gpu usage threshold, determines when the power profile will be changed')
     parser.add_argument('--debug', action='store_true', help='debug boolean, if true some debugging prints will be enable')
     args = parser.parse_args()
 
+    #result = subprocess.getoutput(["powercfg","-l"])
+    #print(result)
+    
     delay = 2
-    size = 50
+    length = 50
     threshold = 15
     DEBUG = False
-
+    #print(f'len: {args}')
     if args.delay:
         delay = args.delay
-    if args.size:
-        size = args.size
+    if args.length:
+        length = args.length
     if args.threshold:
         threshold = args.threshold
     if args.debug:
         DEBUG = args.debug
 
     try:
-        print(f"Starting gpu usage monitor:\n- delay set to {delay} seconds\n- array size {size}\n- threshold set to {threshold}%\n- debug = {DEBUG}\n")
+        print(f"Starting gpu usage monitor:\n- delay set to {delay} seconds\n- array length {length}\n- threshold set to {threshold}%\n- debug = {DEBUG}\n")
         subprocess.call(["powercfg", "-getactivescheme"])
         print("\n")
-        monitor = Monitor(delay,size,threshold/100)
+        monitor = Monitor(delay,length,threshold/100)
         monitor.start()
     except (KeyboardInterrupt, SystemExit):
         print ('\n! Received keyboard interrupt, quitting threads.\n')
