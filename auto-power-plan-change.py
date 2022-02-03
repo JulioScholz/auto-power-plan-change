@@ -6,6 +6,7 @@ import numpy as np
 
 
 DEBUG = False
+#source: https://gist.github.com/MarcAlx/443358d5e7167864679ffa1b7d51cd06?permalink_comment_id=3573731#gistcomment-3573731
 def toast_notification(AppID='1', title="TITULAO", text="TEXTAO"):
     XML = ToastNotificationManager.get_template_content(ToastTemplateType.TOAST_TEXT02)
     t = XML.get_elements_by_tag_name("text")
@@ -27,32 +28,27 @@ def positive(numeric_type):
 class Monitor(Thread):
     def __init__(self, delay, length, threshold):
         super(Monitor, self).__init__()
-
         #mode 0 = Power saving profile
         #mode 1 = High performance profile
         self.mode = -1
-        
         self.threshold = threshold  #The average gpu usage threshold
-       
         self.delay = delay # Time between calls to GPUtil
         self.it = 0 #Iterations counter
-        self.arr = np.array([]) #Array that stores the last gpu usage measuraments, used to calculate the gpu usage average
+        self.arr  = np.zeros(length) #Array that stores the last gpu usage measuraments, used to calculate the gpu usage average
         self.length = length #The size of the array
         self.stopped = False
-        #self.start()
 
     def stop(self):
         self.stopped = True
 
     def run(self):
         while not self.stopped:
+            self.it += 1
+            #GPUtil.ge
             gpu1 = GPUtil.getGPUs()[0]
+        
+            self.arr[(self.it%self.length)] = gpu1.load
 
-            if len(self.arr) == self.length:
-                self.arr[(self.it%self.length)-1] = gpu1.load
-            else:
-                self.arr = np.append(self.arr,gpu1.load)
-            
             #Get the gpu usage average
             avg = np.average(self.arr)
 
@@ -72,7 +68,7 @@ class Monitor(Thread):
                 self.mode = 0
 
             print(avg)
-            self.it += 1
+            
             if DEBUG == True:
                 if self.it%30 == 0:
                     print("\033c", end='')
@@ -92,8 +88,8 @@ def main():
     #result = subprocess.getoutput(["powercfg","-l"])
     #print(result)
     
-    delay = 2
-    length = 50
+    delay = 1
+    length = 2
     threshold = 15
     DEBUG = False
     #print(f'len: {args}')
@@ -107,7 +103,7 @@ def main():
         DEBUG = args.debug
 
     try:
-        print(f"Starting gpu usage monitor:\n- delay set to {delay} seconds\n- array length {length}\n- threshold set to {threshold}%\n- debug = {DEBUG}\n")
+        print(f"Starting gpu usage monitor:\n- delay set to {delay} seconds\n- array length {length}\n- threshold set to {threshold}%\n- debug = {DEBUG}\n- current power profile: ")
         subprocess.call(["powercfg", "-getactivescheme"])
         print("\n")
         monitor = Monitor(delay,length,threshold/100)
